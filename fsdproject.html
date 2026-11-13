@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineMatch — Discover Your Next Favorite Movie</title>
+  <script>
+    document.documentElement.classList.toggle('light-mode', localStorage.getItem('theme') === 'light');
+  </script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Roboto:wght@300;400;500;700&display=swap">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* ========== ROOT VARIABLES ========== */
+    :root {
+      --primary: #e50914;
+      --primary-dark: #b81d24;
+      --primary-light: #ff3040;
+      --bg-dark: #141414;
+      --bg-darker: #0a0a0a;
+      --bg-card: #1a1a1a;
+      --bg-card-hover: #242424;
+      --text-light: #ffffff;
+      --text-gray: #b3b3b3;
+      --text-muted: #6b6b6b;
+      --gradient-primary: linear-gradient(135deg, #e50914, #b81d24);
+      --gradient-dark: linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(20,20,20,0.95));
+      --box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      --box-shadow-hover: 0 12px 48px rgba(229,9,20,0.3);
+      --transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-full: 50%;
+      --font-xs: 0.75rem;
+      --font-sm: 0.875rem;
+      --font-md: 1rem;
+      --font-lg: 1.25rem;
+      --font-xl: 1.5rem;
+      --font-2xl: 2rem;
+      --font-3xl: 3rem;
+      --container-width: 1200px;
+      --container-padding: 2rem;
+    }
+
+    /* Light mode overrides */
+    .light-mode {
+      --bg-dark: #f5f5f5;
+      --bg-darker: #e8e8e8;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f0f0f0;
+      --text-light: #1a1a1a;
+      --text-gray: #4a4a4a;
+      --text-muted: #6b6b6b;
+      --box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+    }
+
+    /* ========== RESET & BASE ========== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior:smooth; font-size:16px; }
+    body {
+      font-family:'Poppins','Roboto',sans-serif;
+      background:var(--bg-dark);
+      color:var(--text-light);
+      line-height:1.7;
+      overflow-x:hidden;
+    }
+    h1,h2,h3,h4 { font-weight:700; line-height:1.2; margin-bottom:1rem; }
+    p { margin-bottom:1rem; color:var(--text-gray); }
+    a { color:var(--text-light); text-decoration:none; transition:var(--transition); }
+    a:hover { color:var(--primary); }
+    img { max-width:100%; display:block; }
+
+    /* ========== CONTAINER ========== */
+    .container {
+      max-width:var(--container-width);
+      margin:0 auto;
+      padding:0 var(--container-padding);
+    }
+
+    /* ========== BUTTONS ========== */
+    .btn-primary, .btn-secondary {
+      display:inline-flex; align-items:center; gap:.8rem;
+      padding:.8rem 2rem; border:none; border-radius:var(--radius-full);
+      font-family:inherit; font-size:var(--font-md); font-weight:600;
+      cursor:pointer; transition:var(--transition);
+    }
+    .btn-primary {
+      background:var(--gradient-primary); color:white;
+      box-shadow:0 4px 20px rgba(229,9,20,0.4);
+    }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(229,9,20,0.6); }
+    .btn-secondary {
+      background:rgba(255,255,255,0.1); color:white;
+      border:2px solid rgba(255,255,255,0.2);
+    }
+    .btn-secondary:hover { background:rgba(255,255,255,0.2); transform:translateY(-2px); }
+
+    /* ========== CARDS ========== */
+    .movie-card {
+      background:var(--bg-card); border-radius:var(--radius-md); overflow:hidden;
+      transition:var(--transition); position:relative;
+    }
+    .movie-card:hover { transform:translateY(-8px); box-shadow:var(--box-shadow-hover); }
+    .movie-figure {
+      position:relative; overflow:hidden; margin:0; padding-top:150%;
+    }
+    .movie-poster {
+      position:absolute; top:0; left:0; width:100%; height:100%;
+      object-fit:cover; transition:var(--transition);
+    }
+    .movie-card:hover .movie-poster { transform:scale(1.05); }
+    .movie-poster.placeholder {
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg,#1a1a1a,#2a2a2a);
+      font-size:4rem; opacity:.3;
+    }
+    .movie-info { padding:1rem; }
+    .movie-info h3 { font-size:var(--font-md); margin-bottom:.3rem; }
+    .movie-meta { font-size:var(--font-sm); color:var(--text-muted); }
+    .movie-description {
+      font-size:var(--font-sm); color:var(--text-gray);
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+      overflow:hidden; margin:.5rem 0;
+    }
+    .rating-badge {
+      position:absolute; top:10px; right:10px;
+      background:rgba(0,0,0,0.8); padding:.3rem .8rem;
+      border-radius:var(--radius-full); font-size:var(--font-sm);
+      font-weight:600; color:#ffd700; z-index:2;
+    }
+    .rating-badge i { margin-right:.3rem; }
+
+    /* ========== CATEGORY CARDS & LISTS ========== */
+    .category-card {
+      background:var(--bg-card); border:1px solid rgba(255,255,255,0.05);
+      border-radius:var(--radius-md); padding:1.5rem; margin-bottom:1.5rem;
+      transition:var(--transition);
+    }
+    .category-card:hover { background:var(--bg-card-hover); transform:translateY(-2px); box-shadow:var(--box-shadow); }
+    .category-card h3 { color:var(--text-light); margin-bottom:1rem; font-size:var(--font-lg); }
+    .category-card h3 i { color:var(--primary); margin-right:.5rem; }
+
+    .ordered-list { padding-left:0; list-style:none; counter-reset:movie-counter; }
+    .ordered-list li {
+      padding:.8rem 1rem; margin-bottom:.5rem;
+      background:rgba(255,255,255,0.03); border-radius:var(--radius-sm);
+      counter-increment:movie-counter; display:flex; align-items:center; gap:.8rem;
+      transition:var(--transition);
+    }
+    .ordered-list li::before {
+      content:counter(movie-counter); background:var(--gradient-primary);
+      color:white; width:30px; height:30px; border-radius:var(--radius-full);
+      display:flex; align-items:center; justify-content:center;
+      font-weight:700; font-size:var(--font-sm);
+    }
+    .ordered-list li:hover { background:rgba(229,9,20,0.1); transform:translateX(5px); }
+
+    .genre-list { list-style:none; display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.8rem; }
+    .genre-list li {
+      padding:.8rem 1.2rem; background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.05); border-radius:var(--radius-sm);
+      display:flex; align-items:center; gap:.8rem; transition:var(--transition);
+    }
+    .genre-list li:hover { background:rgba(229,9,20,0.1); border-color:var(--primary); transform:translateY(-2px); }
+    .genre-list li i { color:var(--primary); font-size:var(--font-lg); }
+
+    .nested-list { list-style:none; padding-left:0; }
+    .nested-list > li {
+      padding:1rem; background:rgba(255,255,255,0.03);
+      border-radius:var(--radius-sm); margin-bottom:.5rem; font-weight:600;
+    }
+    .nested-list > li ul { list-style:none; padding-left:2rem; margin-top:.5rem; }
+    .nested-list > li ul li {
+      padding:.5rem 1rem; background:rgba(255,255,255,0.02);
+      border-radius:var(--radius-sm); font-weight:400;
+      border-left:3px solid var(--primary); margin-bottom:.3rem;
+      transition:var(--transition);
+    }
+    .nested-list > li ul li:hover { background:rgba(229,9,20,0.05); padding-left:1.5rem; }
+
+    .definition-list dt {
+      font-weight:600; color:var(--text-light); padding:.8rem 1rem;
+      background:rgba(255,255,255,0.03); border-radius:var(--radius-sm) var(--radius-sm) 0 0;
+      margin-top:.5rem;
+    }
+    .definition-list dt i { color:var(--primary); margin-right:.5rem; }
+    .definition-list dd {
+      padding:.8rem 1rem 1rem 3.5rem; color:var(--text-gray);
+      border-left:3px solid var(--primary); margin-left:0;
+      background:rgba(255,255,255,0.02); border-radius:0 0 var(--radius-sm) var(--radius-sm);
+    }
+
+    /* ========== FORMS ========== */
+    .registration-form {
+      background:var(--bg-card); border-radius:var(--radius-md);
+      padding:2rem; border:1px solid rgba(255,255,255,0.05);
+    }
+    .form-table { width:100%; border-collapse:collapse; }
+    .form-table caption { caption-side:top; padding:1rem; font-size:var(--font-lg); font-weight:600; }
+    .form-table tr { border-bottom:1px solid rgba(255,255,255,0.03); }
+    .form-table td { padding:1rem .5rem; vertical-align:middle; }
+    .form-table td:first-child { width:180px; font-weight:500; color:var(--text-gray); }
+    .form-table td:first-child label { display:flex; align-items:center; gap:.5rem; }
+    .form-table td:first-child i { color:var(--primary); width:20px; }
+    .form-table input[type="text"],
+    .form-table input[type="email"],
+    .form-table input[type="password"],
+    .form-table input[type="date"],
+    .form-table input[type="tel"],
+    .form-table input[type="url"],
+    .form-table select,
+    .form-table textarea {
+      width:100%; max-width:400px; padding:.8rem 1rem;
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1);
+      border-radius:var(--radius-sm); color:var(--text-light);
+      font-family:inherit; font-size:var(--font-sm); transition:var(--transition);
+    }
+    .form-table input:focus, .form-table select:focus, .form-table textarea:focus {
+      outline:none; border-color:var(--primary);
+      background:rgba(255,255,255,0.05); box-shadow:0 0 0 3px rgba(229,9,20,0.1);
+    }
+    .form-table input[type="radio"], .form-table input[type="checkbox"] {
+      margin:0 .3rem 0 .8rem; accent-color:var(--primary); cursor:pointer;
+    }
+    .form-table input[type="range"] { width:200px; accent-color:var(--primary); }
+    #rating-value { display:inline-block; min-width:30px; font-weight:600; color:var(--primary); }
+    .form-actions { text-align:center !important; padding:2rem .5rem !important; }
+    .btn-submit, .btn-reset {
+      padding:.8rem 2.5rem; border:none; border-radius:var(--radius-full);
+      font-family:inherit; font-size:var(--font-md); font-weight:600;
+      cursor:pointer; transition:var(--transition); display:inline-flex;
+      align-items:center; gap:.8rem;
+    }
+    .btn-submit { background:var(--gradient-primary); color:white; box-shadow:0 4px 20px rgba(229,9,20,0.3); }
+    .btn-submit:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(229,9,20,0.5); }
+    .btn-reset {
+      background:rgba(255,255,255,0.05); color:var(--text-gray);
+      border:1px solid rgba(255,255,255,0.1); margin-left:1rem;
+    }
+    .btn-reset:hover { background:rgba(255,255,255,0.1); transform:translateY(-2px); }
+
+    /* ========== TOAST ========== */
+    .toast {
+      position:fixed; bottom:2rem; right:2rem;
+      background:var(--bg-card); border:1px solid rgba(255,255,255,0.1);
+      border-radius:var(--radius-md); padding:1rem 1.5rem;
+      display:flex; align-items:center; gap:1rem;
+      box-shadow:var(--box-shadow); transform:translateY(100px);
+      opacity:0; transition:all .3s ease; z-index:9999;
+    }
+    .toast.show { transform:translateY(0); opacity:1; }
+    .toast i { font-size:1.5rem; }
+    .toast.success i { color:#2ecc71; }
+    .toast.error i { color:#ff4757; }
+    .toast.info i { color:#3498db; }
+
+    /* ========== GENRE FILTERS ========== */
+    .genre-filters { display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:2rem; }
+    .genre-filter-btn {
+      padding:.5rem 1.2rem; background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-full);
+      color:var(--text-gray); font-family:inherit; font-size:var(--font-sm);
+      cursor:pointer; transition:var(--transition);
+    }
+    .genre-filter-btn:hover, .genre-filter-btn.active {
+      background:var(--gradient-primary); color:white; border-color:var(--primary);
+    }
+    .results-count { color:var(--text-muted); font-size:var(--font-sm); margin-bottom:1rem; }
+    .results-count span { color:var(--text-light); font-weight:600; }
+
+    /* ========== LOADING & ERROR ========== */
+    .loading-spinner {
+      display:flex; justify-content:center; align-items:center;
+      min-height:300px; flex-direction:column; gap:1rem;
+    }
+    .loading-spinner i { font-size:3rem; color:var(--primary); animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .error-msg { text-align:center; padding:2rem; color:var(--text-gray); }
+
+    /* ========== GALLERY ========== */
+    .gallery-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:1rem;
+    }
+    .gallery-item {
+      position:relative; overflow:hidden; border-radius:var(--radius-sm);
+      aspect-ratio:2/3; cursor:pointer;
+    }
+    .gallery-thumbnail {
+      width:100%; height:100%; object-fit:cover; transition:var(--transition);
+    }
+    .gallery-item:hover .gallery-thumbnail { transform:scale(1.1); }
+    .gallery-overlay {
+      position:absolute; inset:0; background:rgba(0,0,0,0.7);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      opacity:0; transition:var(--transition); gap:.5rem;
+    }
+    .gallery-item:hover .gallery-overlay { opacity:1; }
+    .gallery-overlay i { font-size:2rem; color:white; }
+    .gallery-overlay span { color:white; font-size:var(--font-sm); }
+
+    /* ========== SCHEDULE TABLE ========== */
+    .table-wrapper { overflow-x:auto; border-radius:var(--radius-md); border:1px solid rgba(255,255,255,0.05); }
+    .movie-schedule {
+      width:100%; border-collapse:collapse; background:var(--bg-card);
+      min-width:700px;
+    }
+    .movie-schedule caption { caption-side:top; padding:1rem; font-size:var(--font-lg); font-weight:600; }
+    .movie-schedule thead { background:var(--gradient-primary); }
+    .movie-schedule th { padding:1rem 1.5rem; text-align:left; font-weight:600; text-transform:uppercase; letter-spacing:1px; font-size:var(--font-sm); }
+    .movie-schedule td { padding:1rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.05); transition:var(--transition); }
+    .movie-schedule tbody tr:hover { background:rgba(229,9,20,0.05); }
+    .time-slot { font-weight:600; color:var(--primary); }
+    .movie-schedule tfoot { background:rgba(255,255,255,0.02); }
+    .table-footer { text-align:center !important; font-size:var(--font-sm); color:var(--text-muted); }
+    .today-col { background:rgba(229,9,20,0.15) !important; font-weight:600; }
+
+    /* ========== HEADER / NAV ========== */
+    #main-header {
+      position:fixed; top:0; left:0; right:0; z-index:1000;
+      background:linear-gradient(to bottom,rgba(0,0,0,0.95),rgba(20,20,20,0.9));
+      backdrop-filter:blur(10px);
+      border-bottom:1px solid rgba(229,9,20,0.2);
+      transition:var(--transition);
+    }
+    #main-header.scrolled { background:rgba(0,0,0,0.98); box-shadow:0 2px 20px rgba(0,0,0,0.8); }
+    .navbar { padding:.8rem 0; }
+    .nav-container {
+      display:flex; align-items:center; justify-content:space-between;
+      max-width:var(--container-width); margin:0 auto; padding:0 var(--container-padding);
+    }
+    .logo a { display:flex; align-items:center; gap:.5rem; font-size:var(--font-xl); font-weight:800; }
+    .logo i { font-size:2rem; color:var(--primary); }
+    .logo-text {
+      background:var(--gradient-primary); -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent; background-clip:text;
+      font-weight:900; letter-spacing:-.5px;
+    }
+    .nav-menu { display:flex; align-items:center; gap:.5rem; list-style:none; margin:0; padding:0; }
+    .nav-link {
+      display:flex; align-items:center; gap:.5rem; padding:.6rem 1.2rem;
+      color:var(--text-gray); font-size:var(--font-sm); font-weight:500;
+      border-radius:var(--radius-sm); transition:var(--transition); position:relative;
+    }
+    .nav-link i { font-size:1rem; }
+    .nav-link:hover, .nav-link.active { color:var(--text-light); background:rgba(229,9,20,0.15); }
+    .nav-link.active::after {
+      content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+      width:30%; height:3px; background:var(--primary); border-radius:3px;
+    }
+    .nav-right { display:flex; align-items:center; gap:1.5rem; }
+    .search-container {
+      display:flex; align-items:center; background:rgba(255,255,255,0.05);
+      border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-full);
+      padding:.3rem .3rem .3rem 1rem; transition:var(--transition);
+    }
+    .search-container:focus-within { border-color:var(--primary); background:rgba(255,255,255,0.1); }
+    .search-input {
+      background:transparent; border:none; outline:none; color:var(--text-light);
+      font-family:inherit; font-size:var(--font-sm); padding:.3rem 0; width:150px;
+    }
+    .search-input::placeholder { color:var(--text-muted); }
+    .search-btn {
+      background:var(--gradient-primary); border:none; color:white;
+      padding:.5rem 1rem; border-radius:var(--radius-full); cursor:pointer;
+      transition:var(--transition);
+    }
+    .search-btn:hover { transform:scale(1.05); box-shadow:0 0 20px rgba(229,9,20,0.4); }
+    .user-profile { display:flex; align-items:center; gap:.8rem; cursor:pointer; padding:.3rem .8rem; border-radius:var(--radius-full); transition:var(--transition); }
+    .user-profile:hover { background:rgba(255,255,255,0.05); }
+    .user-avatar {
+      width:36px; height:36px; border-radius:var(--radius-full);
+      border:2px solid var(--primary); display:flex; align-items:center;
+      justify-content:center; background:linear-gradient(135deg,#e50914,#b81d24);
+      color:white; font-weight:600;
+    }
+    .username { font-size:var(--font-sm); font-weight:500; }
+    .theme-toggle {
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+      color:var(--text-light); width:40px; height:40px; border-radius:var(--radius-full);
+      cursor:pointer; transition:var(--transition);
+    }
+    .theme-toggle:hover { background:rgba(229,9,20,0.2); border-color:var(--primary); }
+
+    /* ========== HERO ========== */
+    .hero-section {
+      min-height:100vh; display:flex; align-items:center;
+      padding:8rem 0 4rem; position:relative; overflow:hidden;
+    }
+    .hero-bg { position:absolute; inset:0; z-index:0; }
+    .hero-video {
+      position:absolute; top:50%; left:50%; min-width:100%; min-height:100%;
+      transform:translate(-50%,-50%); object-fit:cover;
+    }
+    .hero-section::before {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(rgba(0,0,0,0.7),rgba(0,0,0,0.8)); z-index:1;
+    }
+    .hero-particles {
+      position:absolute; inset:0; z-index:1;
+      background:radial-gradient(circle at 20% 30%, rgba(229,9,20,0.15) 0%, transparent 50%),
+                 radial-gradient(circle at 80% 70%, rgba(229,9,20,0.1) 0%, transparent 50%);
+      animation:floatParticles 10s ease-in-out infinite alternate;
+    }
+    @keyframes floatParticles { 0% { opacity:.3; } 100% { opacity:.8; } }
+    .hero-inner { position:relative; z-index:2; }
+    .hero-content {
+      max-width: 700px;
+      text-align: left;
+    }
+    .hero-eyebrow { font-size:var(--font-sm); text-transform:uppercase; letter-spacing:2px; color:var(--primary); margin-bottom:.5rem; }
+    .hero-title { font-size:clamp(2.5rem,6vw,4.5rem); font-weight:900; line-height:1.1; margin-bottom:1.5rem; }
+    .hero-title span { background:var(--gradient-primary); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .hero-subtitle { font-size:var(--font-lg); color:var(--text-gray); margin-bottom:2.5rem; }
+    .hero-buttons { display:flex; gap:1rem; margin-bottom:2.5rem; }
+    .rating-display { display:flex; align-items:center; gap:1rem; }
+    .rating-stars { color:#ffd700; font-size:var(--font-lg); }
+    .rating-text { color:var(--text-gray); font-size:var(--font-sm); }
+
+    /* ========== SECTIONS ========== */
+    .page-section { padding:5rem 0; }
+    .section-title { font-size:clamp(1.8rem,3vw,2.8rem); font-weight:800; margin-bottom:1.5rem; position:relative; display:inline-block; }
+    .section-title::after {
+      content:''; position:absolute; bottom:-5px; left:0; width:60px; height:4px;
+      background:var(--gradient-primary); border-radius:2px;
+    }
+    .section-title i { color:var(--primary); margin-right:.5rem; }
+    .section-subtitle { color:var(--text-gray); font-size:var(--font-md); margin-bottom:2.5rem; }
+    .categories-section { padding:5rem 0; background:var(--bg-darker); }
+
+    /* ========== MOVIE GRID ========== */
+    .movie-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+      gap:2rem;
+    }
+    .load-more-wrap { text-align:center; margin-top:3rem; }
+    .load-more { margin-top:2rem; display:block; margin-left:auto; margin-right:auto; }
+
+    /* ========== FOOTER ========== */
+    #site-footer {
+      background:var(--bg-darker); padding:2rem 0;
+      border-top:1px solid rgba(255,255,255,0.05);
+    }
+    .footer-inner {
+      display:flex; justify-content:space-between; align-items:center;
+      flex-wrap:wrap; gap:1rem;
+    }
+    .footer-inner p { margin:0; font-size:var(--font-sm); color:var(--text-muted); }
+    .footer-social { display:flex; gap:1rem; }
+    .footer-social a { color:var(--text-muted); transition:var(--transition); }
+    .footer-social a:hover { color:var(--primary); }
+
+    /* ========== ANIMATIONS ========== */
+    @keyframes fadeInUp {
+      from { opacity:0; transform:translateY(30px); }
+      to { opacity:1; transform:translateY(0); }
+    }
+    @keyframes pulse {
+      0% { transform:scale(1); }
+      50% { transform:scale(1.05); }
+      100% { transform:scale(1); }
+    }
+    @keyframes shimmer {
+      0% { background-position:-200% center; }
+      100% { background-position:200% center; }
+    }
+    @keyframes float {
+      0% { transform:translateY(0px); }
+      50% { transform:translateY(-10px); }
+      100% { transform:translateY(0px); }
+    }
+
+    .fade-in-up { animation:fadeInUp .8s ease forwards; }
+    .pulse { animation:pulse 2s ease-in-out infinite; }
+    .float { animation:float 3s ease-in-out infinite; }
+    .card-entrance { opacity:0; animation:fadeInUp .6s ease forwards; }
+    .card-entrance:nth-child(1) { animation-delay:.1s; }
+    .card-entrance:nth-child(2) { animation-delay:.2s; }
+    .card-entrance:nth-child(3) { animation-delay:.3s; }
+    .card-entrance:nth-child(4) { animation-delay:.4s; }
+    .card-entrance:nth-child(5) { animation-delay:.5s; }
+    .card-entrance:nth-child(6) { animation-delay:.6s; }
+    .card-entrance:nth-child(7) { animation-delay:.7s; }
+    .card-entrance:nth-child(8) { animation-delay:.8s; }
+
+    .animated-text {
+      background:var(--gradient-primary);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      background-clip:text;
+      background-size:200% auto;
+      animation:shimmer 3s linear infinite;
+    }
+
+    /* ========== RESPONSIVE ========== */
+    .hamburger {
+      display:none; flex-direction:column; cursor:pointer;
+      padding:.5rem; background:none; border:none; gap:5px;
+    }
+    .hamburger span { display:block; width:25px; height:3px; background:var(--text-light); border-radius:3px; transition:var(--transition); }
+    .hamburger.active span:nth-child(1) { transform:rotate(45deg) translate(5px,5px); }
+    .hamburger.active span:nth-child(2) { opacity:0; }
+    .hamburger.active span:nth-child(3) { transform:rotate(-45deg) translate(5px,-5px); }
+
+    @media (max-width:992px) {
+      .hamburger { display:flex; }
+      .nav-menu {
+        display:none; position:absolute; top:100%; left:0; right:0;
+        background:rgba(0,0,0,0.98); flex-direction:column; padding:1rem;
+        gap:.5rem; border-bottom:1px solid rgba(255,255,255,0.05);
+        max-height:0; overflow:hidden; transition:max-height .3s ease;
+      }
+      .nav-menu.active { display:flex; max-height:500px; overflow-y:auto; }
+      .nav-link { padding:.8rem 1.2rem; width:100%; }
+      .form-table td { display:block; padding:.5rem; }
+      .form-table td:first-child { width:auto; font-weight:600; }
+      .form-table input[type="text"], .form-table input[type="email"],
+      .form-table input[type="password"], .form-table input[type="date"],
+      .form-table input[type="tel"], .form-table input[type="url"],
+      .form-table select, .form-table textarea { max-width:100%; }
+      .form-actions { text-align:center !important; }
+      .btn-reset { margin-left:.5rem; }
+    }
+
+    @media (max-width:768px) {
+      .container { padding:0 1rem; }
+      .hero-title { font-size:clamp(2rem,5vw,3rem); }
+      .hero-buttons { flex-direction:column; }
+      .movie-grid { grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem; }
+      .gallery-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+      .genre-list { grid-template-columns:1fr 1fr; }
+      .search-input { width:100px; }
+      .username { display:none; }
+    }
+
+    @media (max-width:480px) {
+      .movie-grid { grid-template-columns:1fr 1fr; gap:.8rem; }
+      .gallery-grid { grid-template-columns:1fr 1fr; gap:.5rem; }
+      .hero-title { font-size:1.8rem; }
+      .hero-subtitle { font-size:.9rem; }
+      .btn-primary, .btn-secondary { padding:.6rem 1.5rem; font-size:.9rem; }
+      .section-title { font-size:1.5rem; }
+      .movie-info h3 { font-size:.9rem; }
+      .movie-description { -webkit-line-clamp:1; }
+      .registration-form { padding:1rem; }
+      .form-table td { padding:.3rem 0; }
+      .form-table input[type="text"], .form-table input[type="email"],
+      .form-table input[type="password"], .form-table input[type="date"],
+      .form-table input[type="tel"], .form-table input[type="url"],
+      .form-table select, .form-table textarea { padding:.5rem .8rem; font-size:.85rem; }
+      .movie-schedule { min-width:300px; font-size:.8rem; }
+      .movie-schedule th, .movie-schedule td { padding:.4rem .6rem; }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      *, *::before, *::after {
+        animation-duration:.01ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:.01ms !important;
+      }
+    }
+
+    /* Hide pages by default, show active */
+    .page-view { display: none; }
+    .page-view.active { display: block; }
+  </style>
+</head>
+<body>
+  <header id="main-header"></header>
+
+  <!-- ==================== PAGE: HOME ==================== -->
+  <div id="page-home" class="page-view active">
+    <main>
+      <section class="hero-section" id="home">
+        <div class="hero-bg">
+          <video class="hero-video" autoplay muted loop playsinline preload="auto"
+                 poster="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1920&q=80">
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-red-curtains-opening-in-a-theater-4194-large.mp4" type="video/mp4">
+          </video>
+          <div class="hero-particles"></div>
+        </div>
+        <div class="container hero-inner">
+          <div class="hero-content">
+            <p class="hero-eyebrow"><i class="fas fa-bolt"></i> Powered by TMDB</p>
+            <h1 class="hero-title">Discover Your Next <span class="animated-text">Favorite</span> Movie</h1>
+            <p class="hero-subtitle">Find films you'll love — before the popcorn gets cold.</p>
+            <div class="hero-buttons">
+              <a href="#" data-page="recommendations" class="btn-primary pulse"><i class="fas fa-fire"></i> Explore Movies</a>
+              <a href="#" data-page="schedule" class="btn-secondary"><i class="fas fa-calendar-alt"></i> Weekly Schedule</a>
+            </div>
+            <div class="rating-display">
+              <span class="rating-stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i></span>
+              <span class="rating-text">4.5/5 · 10K+ Reviews</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="container">
+          <h2 class="section-title"><i class="fas fa-fire"></i> Trending This Week</h2>
+          <p class="section-subtitle">The hottest movies people are watching right now.</p>
+          <div class="movie-grid" id="trendingGrid">
+            <div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading trending movies…</p></div>
+          </div>
+          <div class="load-more-wrap">
+            <a href="#" data-page="recommendations" class="btn-primary"><i class="fas fa-arrow-right"></i> See All Recommendations</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="categories-section" id="categories">
+        <div class="container">
+          <h2 class="section-title"><i class="fas fa-list-ul"></i> Movie Categories</h2>
+          <article class="category-card fade-in-up">
+            <h3><i class="fas fa-trophy"></i> Top Rated Movies (Ordered List)</h3>
+            <ol class="ordered-list" id="topRatedList"><li>Loading top rated movies…</li></ol>
+          </article>
+          <article class="category-card fade-in-up" style="animation-delay:.2s;">
+            <h3><i class="fas fa-tags"></i> Popular Genres (Unordered List)</h3>
+            <ul class="genre-list">
+              <li><i class="fas fa-fist-raised"></i> Action</li>
+              <li><i class="fas fa-mask"></i> Drama</li>
+              <li><i class="fas fa-laugh"></i> Comedy</li>
+              <li><i class="fas fa-rocket"></i> Sci-Fi</li>
+              <li><i class="fas fa-ghost"></i> Horror</li>
+              <li><i class="fas fa-heart"></i> Romance</li>
+            </ul>
+          </article>
+          <article class="category-card fade-in-up" style="animation-delay:.4s;">
+            <h3><i class="fas fa-sitemap"></i> Sub-Genres (Nested List)</h3>
+            <ul class="nested-list">
+              <li>Action<ul><li>Martial Arts</li><li>Superhero</li><li>Spy Thriller</li></ul></li>
+              <li>Drama<ul><li>Historical Drama</li><li>Crime Drama</li><li>Sports Drama</li></ul></li>
+              <li>Comedy<ul><li>Romantic Comedy</li><li>Dark Comedy</li><li>Slapstick</li></ul></li>
+            </ul>
+          </article>
+          <article class="category-card fade-in-up" style="animation-delay:.6s;">
+            <h3><i class="fas fa-book"></i> Movie Terminology (Definition List)</h3>
+            <dl class="definition-list">
+              <dt><i class="fas fa-video"></i> Cinematography</dt><dd>The art of motion-picture photography and lighting.</dd>
+              <dt><i class="fas fa-cut"></i> Montage</dt><dd>A sequence of short shots that condense time and information.</dd>
+              <dt><i class="fas fa-theater-masks"></i> Diegesis</dt><dd>The narrative world of the film, including characters and events.</dd>
+              <dt><i class="fas fa-pen"></i> Screenplay</dt><dd>The written script of a film, including dialogue and action.</dd>
+            </dl>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== PAGE: RECOMMENDATIONS ==================== -->
+  <div id="page-recommendations" class="page-view">
+    <main>
+      <section class="page-section">
+        <div class="container">
+          <h2 class="section-title"><i class="fas fa-star"></i> Recommended for You</h2>
+          <div class="genre-filters" id="genreFilters">
+            <button class="genre-filter-btn active" data-genre="all">All</button>
+            <button class="genre-filter-btn" data-genre="28">Action</button>
+            <button class="genre-filter-btn" data-genre="18">Drama</button>
+            <button class="genre-filter-btn" data-genre="35">Comedy</button>
+            <button class="genre-filter-btn" data-genre="878">Sci-Fi</button>
+            <button class="genre-filter-btn" data-genre="27">Horror</button>
+            <button class="genre-filter-btn" data-genre="10749">Romance</button>
+          </div>
+          <div class="results-count">Showing <span id="movieCount">0</span> movies</div>
+          <div class="movie-grid" id="movieGrid">
+            <div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading…</p></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== PAGE: GALLERY ==================== -->
+  <div id="page-gallery" class="page-view">
+    <main>
+      <section class="page-section">
+        <div class="container">
+          <h2 class="section-title"><i class="fas fa-images"></i> Movie Poster Gallery</h2>
+          <p class="section-subtitle">Click on thumbnails to view full-size posters</p>
+          <div class="gallery-grid" id="galleryGrid">
+            <div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading gallery…</p></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== PAGE: SCHEDULE ==================== -->
+  <div id="page-schedule" class="page-view">
+    <main>
+      <section class="page-section">
+        <div class="container">
+          <h2 class="section-title"><i class="fas fa-calendar-alt"></i> Weekly Movie Schedule</h2>
+          <div class="table-wrapper">
+            <table class="movie-schedule">
+              <caption>Movie Showtimes - Week of September 2026</caption>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Monday</th>
+                  <th>Tuesday</th>
+                  <th>Wednesday</th>
+                  <th>Thursday</th>
+                  <th>Friday</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td class="time-slot">10:00 AM</td><td>Inception</td><td>The Dark Knight</td><td>Interstellar</td><td>Dune</td><td>Avatar</td></tr>
+                <tr><td class="time-slot">1:00 PM</td><td colspan="2">The Shawshank Redemption</td><td>Pulp Fiction</td><td colspan="2">Fight Club</td></tr>
+                <tr><td class="time-slot">4:00 PM</td><td>Gladiator</td><td>Braveheart</td><td colspan="2">The Godfather</td><td>Goodfellas</td></tr>
+                <tr><td class="time-slot">7:00 PM</td><td rowspan="2">The Matrix</td><td>Spider-Man</td><td>Iron Man</td><td>Avengers</td><td rowspan="2">Star Wars</td></tr>
+                <tr><td class="time-slot">9:30 PM</td><td>Black Panther</td><td>Wonder Woman</td><td>Aquaman</td></tr>
+              </tbody>
+              <tfoot>
+                <tr><td colspan="6" class="table-footer"><i class="fas fa-info-circle"></i> All times in local theater time. Schedule subject to change.</td></tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== PAGE: REGISTER ==================== -->
+  <div id="page-register" class="page-view">
+    <main>
+      <section class="page-section">
+        <div class="container">
+          <h2 class="section-title"><i class="fas fa-user-plus"></i> User Registration</h2>
+          <form class="registration-form" id="registrationForm">
+            <table class="form-table">
+              <caption>Create Your CineMatch Account</caption>
+              <tbody>
+                <tr><td><label for="fullname"><i class="fas fa-user"></i> Full Name:</label></td><td><input type="text" id="fullname" placeholder="Enter your full name" required></td></tr>
+                <tr><td><label for="email"><i class="fas fa-envelope"></i> Email:</label></td><td><input type="email" id="email" placeholder="you@example.com" required></td></tr>
+                <tr><td><label for="password"><i class="fas fa-lock"></i> Password:</label></td><td><input type="password" id="password" placeholder="Min 8 characters" minlength="8" required></td></tr>
+                <tr><td><label for="dob"><i class="fas fa-calendar-alt"></i> Date of Birth:</label></td><td><input type="date" id="dob"></td></tr>
+                <tr><td><label><i class="fas fa-venus-mars"></i> Gender:</label></td><td>
+                  <input type="radio" id="male" name="gender" value="male"><label for="male">Male</label>
+                  <input type="radio" id="female" name="gender" value="female"><label for="female">Female</label>
+                  <input type="radio" id="other" name="gender" value="other"><label for="other">Other</label>
+                </td></tr>
+                <tr><td><label><i class="fas fa-tag"></i> Preferred Genres:</label></td><td>
+                  <input type="checkbox" id="genre-action" name="genres" value="action"><label for="genre-action">Action</label>
+                  <input type="checkbox" id="genre-drama" name="genres" value="drama"><label for="genre-drama">Drama</label>
+                  <input type="checkbox" id="genre-comedy" name="genres" value="comedy"><label for="genre-comedy">Comedy</label>
+                  <input type="checkbox" id="genre-scifi" name="genres" value="scifi"><label for="genre-scifi">Sci-Fi</label>
+                </td></tr>
+                <tr><td><label for="country"><i class="fas fa-globe"></i> Country:</label></td><td>
+                  <select id="country"><option value="">Select your country</option><option value="us">United States</option><option value="uk">United Kingdom</option><option value="ca">Canada</option><option value="au">Australia</option><option value="in">India</option></select>
+                </td></tr>
+                <tr><td><label for="bio"><i class="fas fa-comment"></i> Bio/Interests:</label></td><td><textarea id="bio" rows="4" placeholder="Tell us about your movie preferences..."></textarea></td></tr>
+                <tr><td><label><i class="fas fa-newspaper"></i> Newsletter:</label></td><td><input type="checkbox" id="newsletter" checked><label for="newsletter">Subscribe to weekly movie recommendations</label></td></tr>
+                <tr><td><label for="rating"><i class="fas fa-star"></i> Your Rating Style:</label></td><td><input type="range" id="rating" min="1" max="5" value="3"><span id="rating-value">3</span> / 5</td></tr>
+                <tr><td><label><i class="fas fa-upload"></i> Profile Picture:</label></td><td><input type="file" id="avatar" accept="image/*"></td></tr>
+                <tr><td><label><i class="fas fa-link"></i> Social Media:</label></td><td><input type="url" id="social" placeholder="https://your-profile.com"></td></tr>
+                <tr><td><label><i class="fas fa-phone"></i> Phone:</label></td><td><input type="tel" id="phone" placeholder="+1 (555) 123-4567"></td></tr>
+                <tr><td colspan="2" class="form-actions">
+                  <button type="submit" class="btn-submit"><i class="fas fa-user-plus"></i> Register Now</button>
+                  <button type="reset" class="btn-reset"><i class="fas fa-undo"></i> Reset Form</button>
+                </td></tr>
+              </tbody>
+            </table>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer id="site-footer"></footer>
+
+  <script>
+    // ==================== CONFIG ====================
+    const CONFIG = {
+      API_KEY: '8d3427ec656ea0d378fe47808b21d6bf',
+      BASE_URL: 'https://api.themoviedb.org/3',
+      IMAGE_BASE_URL: 'https://image.tmdb.org/t/p/',
+      POSTER_SIZE: 'w500',
+      BACKDROP_SIZE: 'original',
+      PROFILE_SIZE: 'w185'
+    };
+
+    // ==================== API HELPERS ====================
+    async function fetchTrendingMovies(page = 1) {
+      const res = await fetch(`${CONFIG.BASE_URL}/trending/movie/week?api_key=${CONFIG.API_KEY}&page=${page}`);
+      if (!res.ok) throw new Error('Failed to fetch trending');
+      return res.json();
+    }
+    async function fetchTopRatedMovies(page = 1) {
+      const res = await fetch(`${CONFIG.BASE_URL}/movie/top_rated?api_key=${CONFIG.API_KEY}&page=${page}`);
+      if (!res.ok) throw new Error('Failed to fetch top rated');
+      return res.json();
+    }
+    async function searchMovies(query, page = 1) {
+      const res = await fetch(`${CONFIG.BASE_URL}/search/movie?api_key=${CONFIG.API_KEY}&query=${encodeURIComponent(query)}&page=${page}`);
+      if (!res.ok) throw new Error('Failed to search');
+      return res.json();
+    }
+    async function fetchMoviesByGenre(genreId, page = 1) {
+      const res = await fetch(`${CONFIG.BASE_URL}/discover/movie?api_key=${CONFIG.API_KEY}&with_genres=${genreId}&sort_by=popularity.desc&page=${page}`);
+      if (!res.ok) throw new Error('Failed to fetch by genre');
+      return res.json();
+    }
+    function getPosterUrl(path, size = CONFIG.POSTER_SIZE) {
+      if (!path) return null;
+      return `${CONFIG.IMAGE_BASE_URL}${size}${path}`;
+    }
+    const GENRES = {
+      28:'Action',12:'Adventure',16:'Animation',35:'Comedy',80:'Crime',
+      99:'Documentary',18:'Drama',10751:'Family',14:'Fantasy',36:'History',
+      27:'Horror',10402:'Music',9648:'Mystery',10749:'Romance',878:'Sci-Fi',
+      10770:'TV Movie',53:'Thriller',10752:'War',37:'Western'
+    };
+    function getGenreName(id) { return GENRES[id] || 'Unknown'; }
+
+    function createMovieCard(movie) {
+      const poster = getPosterUrl(movie.poster_path);
+      const year = movie.release_date ? movie.release_date.substring(0,4) : 'Unknown';
+      const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
+      return `
+        <article class="movie-card card-entrance">
+          <figure class="movie-figure">
+            ${poster ? `<img src="${poster}" alt="${movie.title}" class="movie-poster" loading="lazy">` : `<div class="movie-poster placeholder">🎬</div>`}
+            <div class="rating-badge"><i class="fas fa-star"></i> ${rating}</div>
+          </figure>
+          <div class="movie-info">
+            <h3>${movie.title}</h3>
+            <p class="movie-meta"><i class="fas fa-calendar"></i> ${year}</p>
+            <p class="movie-description">${movie.overview ? movie.overview.substring(0,100)+'...' : 'No description.'}</p>
+          </div>
+        </article>
+      `;
+    }
+
+    // ==================== NAVIGATION (SPA) ====================
+    function showPage(pageId) {
+      // Hide all pages, show the requested one
+      document.querySelectorAll('.page-view').forEach(p => p.classList.remove('active'));
+      const page = document.getElementById('page-' + pageId);
+      if (page) page.classList.add('active');
+      // Update active nav link
+      document.querySelectorAll('.nav-link[data-page]').forEach(link => {
+        link.classList.toggle('active', link.dataset.page === pageId);
+      });
+      // Scroll to top of page (prevents scroll-down issue)
+      window.scrollTo({ top: 0, behavior: 'instant' });
+      // Re-init dynamic content when page becomes visible
+      if (pageId === 'home') initHomePage();
+      if (pageId === 'recommendations') initRecommendationsPage();
+      if (pageId === 'gallery') initGalleryPage();
+      if (pageId === 'schedule') initSchedulePage();
+    }
+
+    // ==================== HEADER & FOOTER ====================
+    function renderHeaderFooter() {
+      const header = document.getElementById('main-header');
+      const footer = document.getElementById('site-footer');
+
+      header.innerHTML = `
+        <nav class="navbar">
+          <div class="nav-container">
+            <button class="hamburger" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+            <div class="logo"><a href="#" data-page="home"><i class="fas fa-film"></i><span class="logo-text">CineMatch</span></a></div>
+            <ul class="nav-menu" id="navMenu">
+              <li><a href="#" data-page="home" class="nav-link"><i class="fas fa-home"></i> Home</a></li>
+              <li><a href="#" data-page="recommendations" class="nav-link"><i class="fas fa-star"></i> Recommendations</a></li>
+              <li><a href="#" data-page="gallery" class="nav-link"><i class="fas fa-images"></i> Gallery</a></li>
+              <li><a href="#" data-page="schedule" class="nav-link"><i class="fas fa-calendar-alt"></i> Schedule</a></li>
+              <li><a href="#" data-page="register" class="nav-link"><i class="fas fa-user-plus"></i> Register</a></li>
+            </ul>
+            <div class="nav-right">
+              <div class="search-container">
+                <input type="text" placeholder="Search movies..." class="search-input" id="searchInput">
+                <button class="search-btn" id="searchBtn"><i class="fas fa-search"></i></button>
+              </div>
+              <div class="user-profile"><div class="user-avatar"><span>👤</span></div><span class="username">Guest</span></div>
+              <button class="theme-toggle" aria-label="Toggle theme"><i class="fas fa-moon"></i></button>
+            </div>
+          </div>
+        </nav>
+      `;
+
+      footer.innerHTML = `
+        <div class="container footer-inner">
+          <p>&copy; 2025 CineMatch. All rights reserved. Powered by TMDB</p>
+          <div class="footer-social">
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+      `;
+
+      // Hamburger
+      const hamburger = document.querySelector('.hamburger');
+      const navMenu = document.getElementById('navMenu');
+      hamburger.addEventListener('click', () => {
+        hamburger.classList.toggle('active');
+        navMenu.classList.toggle('active');
+      });
+
+      // Theme toggle
+      const themeToggle = document.querySelector('.theme-toggle');
+      const themeIcon = themeToggle.querySelector('i');
+      if (document.documentElement.classList.contains('light-mode')) {
+        themeIcon.classList.replace('fa-moon', 'fa-sun');
+      }
+      themeToggle.addEventListener('click', () => {
+        document.documentElement.classList.toggle('light-mode');
+        const isLight = document.documentElement.classList.contains('light-mode');
+        themeIcon.classList.toggle('fa-moon', !isLight);
+        themeIcon.classList.toggle('fa-sun', isLight);
+        localStorage.setItem('theme', isLight ? 'light' : 'dark');
+      });
+
+      // Search
+      const searchInput = document.getElementById('searchInput');
+      const searchBtn = document.getElementById('searchBtn');
+      function doSearch() {
+        const q = searchInput.value.trim();
+        if (q) {
+          // Switch to recommendations and pass query
+          currentSearchQuery = q;
+          showPage('recommendations');
+          // The init function will read currentSearchQuery
+        }
+      }
+      searchBtn.addEventListener('click', doSearch);
+      searchInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') doSearch(); });
+
+      // Toast container
+      if (!document.querySelector('.toast')) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.id = 'toast';
+        toast.innerHTML = `<i class="fas fa-info-circle"></i><span id="toastMessage"></span>`;
+        document.body.appendChild(toast);
+      }
+
+      // Nav link click handling (SPA)
+      document.querySelectorAll('[data-page]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          const page = el.dataset.page;
+          if (page) {
+            // If search query is present, clear it when navigating via menu
+            if (page === 'recommendations') {
+              currentSearchQuery = '';
+              const searchInput = document.getElementById('searchInput');
+              if (searchInput) searchInput.value = '';
+            }
+            showPage(page);
+            // Close mobile menu
+            const navMenu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger');
+            if (navMenu && navMenu.classList.contains('active')) {
+              navMenu.classList.remove('active');
+              hamburger.classList.remove('active');
+            }
+          }
+        });
+      });
+    }
+
+    // ==================== GLOBAL STATE ====================
+    let currentSearchQuery = '';
+
+    // ==================== PAGE INITIALIZERS ====================
+    // --- HOME ---
+    let homeInitialized = false;
+    async function initHomePage() {
+      if (homeInitialized) return;
+      homeInitialized = true;
+      const trendingGrid = document.getElementById('trendingGrid');
+      const topRatedList = document.getElementById('topRatedList');
+      try {
+        const trending = await fetchTrendingMovies();
+        const movies = trending.results.slice(0, 8);
+        trendingGrid.innerHTML = movies.map(m => createMovieCard(m)).join('');
+
+        const topRated = await fetchTopRatedMovies();
+        const top5 = topRated.results.slice(0, 5);
+        topRatedList.innerHTML = top5.map(m => `
+          <li>${m.title} <span class="movie-year">(${m.release_date ? m.release_date.substring(0,4) : 'Unknown'})</span>
+          <span class="rating-badge">${m.vote_average ? m.vote_average.toFixed(1) : 'N/A'}</span></li>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+        if (trendingGrid) trendingGrid.innerHTML = `<p class="error-msg">Failed to load movies. Check your API key.</p>`;
+      }
+    }
+
+    // --- RECOMMENDATIONS ---
+    let recInitialized = false;
+    let recCurrentPage = 1, recCurrentGenre = 'all', recTotalPages = 1, recLoading = false;
+    async function initRecommendationsPage() {
+      const grid = document.getElementById('movieGrid');
+      const genreFilters = document.getElementById('genreFilters');
+      const resultsCount = document.getElementById('movieCount');
+      if (!grid || !genreFilters) return;
+
+      // If already initialized and no search query change, do nothing
+      if (recInitialized && !currentSearchQuery) return;
+      recInitialized = true;
+
+      // If there's a search query, use it
+      if (currentSearchQuery) {
+        document.getElementById('searchInput').value = currentSearchQuery;
+        // deactivate genre buttons
+        document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
+        recCurrentGenre = 'all';
+      } else {
+        // set active genre to all if none
+        document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
+        const allBtn = document.querySelector('.genre-filter-btn[data-genre="all"]');
+        if (allBtn) allBtn.classList.add('active');
+        recCurrentGenre = 'all';
+      }
+
+      async function loadMovies(reset = true) {
+        if (recLoading) return;
+        recLoading = true;
+        if (reset) {
+          recCurrentPage = 1;
+          grid.innerHTML = `<div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading…</p></div>`;
+        }
+        try {
+          let data;
+          if (currentSearchQuery) {
+            data = await searchMovies(currentSearchQuery, recCurrentPage);
+          } else if (recCurrentGenre !== 'all') {
+            data = await fetchMoviesByGenre(recCurrentGenre, recCurrentPage);
+          } else {
+            data = await fetchTrendingMovies(recCurrentPage);
+          }
+          recTotalPages = data.total_pages;
+          const movies = data.results;
+          if (reset) grid.innerHTML = '';
+          if (movies.length === 0 && reset) grid.innerHTML = `<p class="error-msg">No movies found.</p>`;
+          else grid.insertAdjacentHTML('beforeend', movies.map(m => createMovieCard(m)).join(''));
+          resultsCount.textContent = grid.children.length;
+          let loadMore = document.getElementById('loadMoreBtn');
+          if (!loadMore && recCurrentPage < recTotalPages) {
+            loadMore = document.createElement('button');
+            loadMore.id = 'loadMoreBtn';
+            loadMore.className = 'btn-primary load-more';
+            loadMore.innerHTML = '<i class="fas fa-plus"></i> Load More';
+            loadMore.addEventListener('click', () => { recCurrentPage++; loadMovies(false); });
+            grid.parentNode.appendChild(loadMore);
+          } else if (loadMore && recCurrentPage >= recTotalPages) loadMore.remove();
+        } catch (err) {
+          console.error(err);
+          grid.innerHTML = `<p class="error-msg">Failed to load. Check API key.</p>`;
+        } finally { recLoading = false; }
+      }
+
+      // Genre filter clicks (only if not in search mode)
+      genreFilters.addEventListener('click', (e) => {
+        const btn = e.target.closest('.genre-filter-btn');
+        if (!btn) return;
+        document.querySelectorAll('.genre-filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        recCurrentGenre = btn.dataset.genre;
+        currentSearchQuery = ''; // clear search
+        document.getElementById('searchInput').value = '';
+        loadMovies(true);
+      });
+
+      loadMovies(true);
+    }
+
+    // --- GALLERY ---
+    let galleryInitialized = false;
+    let galleryPage = 1, galleryLoading = false, galleryTotalPages = 1;
+    async function initGalleryPage() {
+      if (galleryInitialized) return;
+      galleryInitialized = true;
+      const galleryGrid = document.getElementById('galleryGrid');
+      if (!galleryGrid) return;
+
+      async function loadGallery(reset = false) {
+        if (galleryLoading) return;
+        galleryLoading = true;
+        if (reset) {
+          galleryPage = 1;
+          galleryGrid.innerHTML = `<div class="loading-spinner"><i class="fas fa-spinner"></i><p>Loading gallery…</p></div>`;
+        }
+        try {
+          const data = await fetchTrendingMovies(galleryPage);
+          galleryTotalPages = data.total_pages;
+          const movies = data.results.filter(m => m.poster_path).slice(0, 12);
+          if (reset) galleryGrid.innerHTML = '';
+          galleryGrid.insertAdjacentHTML('beforeend', movies.map(m => `
+            <div class="gallery-item">
+              <a href="${getPosterUrl(m.poster_path, 'original')}" target="_blank">
+                <img src="${getPosterUrl(m.poster_path)}" alt="${m.title}" class="gallery-thumbnail" loading="lazy">
+                <div class="gallery-overlay"><i class="fas fa-expand"></i><span>${m.title}</span></div>
+              </a>
+            </div>
+          `).join(''));
+          let loadMore = document.getElementById('loadMoreGallery');
+          if (!loadMore && galleryPage < galleryTotalPages) {
+            loadMore = document.createElement('button');
+            loadMore.id = 'loadMoreGallery';
+            loadMore.className = 'btn-primary load-more';
+            loadMore.innerHTML = '<i class="fas fa-plus"></i> Load More';
+            loadMore.addEventListener('click', () => { galleryPage++; loadGallery(false); });
+            galleryGrid.parentNode.appendChild(loadMore);
+          } else if (loadMore && galleryPage >= galleryTotalPages) loadMore.remove();
+        } catch (err) {
+          console.error(err);
+          galleryGrid.innerHTML = `<p class="error-msg">Failed to load gallery.</p>`;
+        } finally { galleryLoading = false; }
+      }
+
+      loadGallery(true);
+    }
+
+    // --- SCHEDULE ---
+    let scheduleInitialized = false;
+    function initSchedulePage() {
+      if (scheduleInitialized) return;
+      scheduleInitialized = true;
+      const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const today = new Date().getDay();
+      const todayName = days[today];
+      const table = document.querySelector('.movie-schedule');
+      if (!table) return;
+      const headers = table.querySelectorAll('thead th');
+      let colIndex = -1;
+      headers.forEach((th, i) => {
+        if (th.textContent.trim().toLowerCase() === todayName) colIndex = i;
+      });
+      if (colIndex === -1) return;
+      headers[colIndex].classList.add('today-col');
+      table.querySelectorAll('tbody tr').forEach(tr => {
+        const tds = tr.children;
+        if (tds[colIndex]) tds[colIndex].classList.add('today-col');
+      });
+    }
+
+    // ==================== TOAST ====================
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      const icon = toast.querySelector('i');
+      const msg = document.getElementById('toastMessage');
+      msg.textContent = message;
+      toast.className = `toast ${type} show`;
+      if (type === 'success') icon.className = 'fas fa-check-circle';
+      else if (type === 'error') icon.className = 'fas fa-exclamation-circle';
+      else icon.className = 'fas fa-info-circle';
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // ==================== REGISTER FORM ====================
+    function initRegisterForm() {
+      const form = document.getElementById('registrationForm');
+      if (!form) return;
+      const ratingInput = document.getElementById('rating');
+      const ratingValue = document.getElementById('rating-value');
+      if (ratingInput) ratingInput.addEventListener('input', () => ratingValue.textContent = ratingInput.value);
+
+      // Avoid duplicate listeners
+      if (form._listenerAdded) return;
+      form._listenerAdded = true;
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fullname = document.getElementById('fullname').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        if (!fullname) return showToast('Please enter your full name.', 'error');
+        if (!email.includes('@')) return showToast('Please enter a valid email.', 'error');
+        if (password.length < 8) return showToast('Password must be at least 8 characters.', 'error');
+
+        const user = {
+          fullname, email,
+          dob: document.getElementById('dob').value,
+          gender: document.querySelector('input[name="gender"]:checked')?.value || '',
+          genres: Array.from(document.querySelectorAll('input[name="genres"]:checked')).map(cb => cb.value),
+          country: document.getElementById('country').value,
+          bio: document.getElementById('bio').value,
+          newsletter: document.getElementById('newsletter').checked,
+          rating: ratingInput.value,
+          social: document.getElementById('social').value,
+          phone: document.getElementById('phone').value
+        };
+        localStorage.setItem('cinematch_user', JSON.stringify(user));
+        showToast('🎉 Registration successful! Welcome to CineMatch!', 'success');
+        form.reset();
+        if (ratingValue) ratingValue.textContent = '3';
+      });
+    }
+
+    // ==================== HEADER SCROLL ====================
+    window.addEventListener('scroll', () => {
+      const header = document.getElementById('main-header');
+      if (header) header.classList.toggle('scrolled', window.scrollY > 50);
+    });
+
+    // ==================== BOOTSTRAP ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      renderHeaderFooter();
+
+      // Determine initial page from hash or default to home
+      const hash = window.location.hash.replace('#', '') || 'home';
+      const validPages = ['home', 'recommendations', 'gallery', 'schedule', 'register'];
+      const initialPage = validPages.includes(hash) ? hash : 'home';
+      showPage(initialPage);
+
+      // Initialize register form listeners (always, since the page exists in DOM)
+      initRegisterForm();
+
+      // Listen to hash changes for back/forward
+      window.addEventListener('hashchange', () => {
+        const newHash = window.location.hash.replace('#', '') || 'home';
+        const valid = ['home', 'recommendations', 'gallery', 'schedule', 'register'];
+        showPage(valid.includes(newHash) ? newHash : 'home');
+      });
+
+      // Override showPage to update hash
+      const originalShowPage = showPage;
+      showPage = function(pageId) {
+        originalShowPage(pageId);
+        if (window.location.hash !== '#' + pageId) {
+          history.pushState(null, '', '#' + pageId);
+        }
+      };
+      // Also handle nav clicks via the data-page attributes (already added in renderHeaderFooter)
+    });
+
+    // Make showPage globally available for inline handlers
+    window.showPage = showPage;
+  </script>
+</body>
+</html>
